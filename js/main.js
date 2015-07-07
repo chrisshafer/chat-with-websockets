@@ -1,9 +1,16 @@
-var wsUri = "ws://localhost:7000/";
+var socketURL = "ws://localhost:7000/";
 
 
 function sendToServer(message) {
-    websocket.send(message);
+    websocket.send(JSON.stringify(new Message(message,"TESTER","UPDATE")));
 }
+
+function Message(message,user,command){
+    this.message = message;
+    this.user = user;
+    this.command = command;
+}
+
 
 var MainWindow = React.createClass({
     getInitialState: function() {
@@ -28,35 +35,25 @@ var ChatWindow = React.createClass({
     },
     componentDidMount: function() {
         var self = this;
-        websocket = new WebSocket(wsUri);
-        websocket.onopen = function(evt) {
-            onOpen(evt);
-        };
-        websocket.onclose = function(evt) {
-            onClose(evt);
-        };
-        websocket.onmessage = function(evt) {
-            self.sendToOutput(evt.data);
-        };
-        websocket.onerror = function(evt) {
-            onError(evt);
-        };
-        function onOpen(evt) {
-            self.sendToOutput("CONNECTED");
+        websocket = new WebSocket(socketURL);
+        websocket.onopen = function(event) {
+            self.sendToOutput(new Message("CONNECTED","STATUS","STATUS"));
             sendToServer("AUTHENTICATE");
-        }
-        function onClose(evt) {
-            self.sendToOutput("DISCONNECTED");
-        }
-        function onMessage(evt) {
-            self.sendToOutput('RESPONSE: ' + evt.data);
-        }
-        function onError(evt) {
-            self.sendToOutput('ERROR: ' + evt.data);
-        }
+        };
+        websocket.onclose = function(event) {
+            self.sendToOutput(new Message("DISCONNECTED","STATUS","STATUS"));
+        };
+        websocket.onmessage = function(event) {
+            console.log(event.data);
+            self.sendToOutput(JSON.parse(event.data));
+        };
+        websocket.onerror = function(event) {
+            self.sendToOutput(event.data);
+        };
+
     },
     sendToOutput : function(message){
-        this.refs.chatOutput.notify(message);
+        this.refs.chatOutput.writeMessage(message);
         console.log(message);
     },
     render: function() {
@@ -76,10 +73,13 @@ var ChatOutput = React.createClass({
         var self = this;
 
     },
-    notify: function(message){
+    writeMessage: function(message){
         var self = this;
             self.state.messages.push(
-                <div>{message}</div>
+                <div className="message">
+                    <span className="message-user">{message.user}</span>
+                    <span className="message-text">{message.message}</span>
+                </div>
             );
         self.forceUpdate();
         $('.chatbox').scrollTop($('.chatbox').get(0).scrollHeight);
