@@ -1,2 +1,3 @@
-# phillips-hue-manager
-Front-end for phillips-hue-client
+
+# chat-with-websockets
+chat-with-scala client
