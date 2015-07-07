@@ -77,8 +77,7 @@ var ChatOutput = React.createClass({
         var self = this;
             self.state.messages.push(
                 <div className="message">
-                    <span className="message-user">{message.user}</span>
-                    <span className="message-text">{message.message}</span>
+                    <span className="message-user">{message.user}</span> : <span className="message-text">{message.message}</span>
                 </div>
             );
         self.forceUpdate();
