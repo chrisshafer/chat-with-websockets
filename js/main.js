@@ -1,8 +1,12 @@
-var socketURL = "ws://localhost:7000/";
+var socketURL = "wss://localhost:7000/";
 
 
 function sendToServer(message) {
-    websocket.send(JSON.stringify(new Message(message,"TESTER","UPDATE")));
+    if(typeof  message === 'string'){
+        websocket.send(JSON.stringify(new Message(message, "TESTER", "UPDATE")));
+    }else{
+        websocket.send(JSON.stringify(message));
+    }
 }
 
 function Message(message,user,command){
@@ -19,12 +23,55 @@ var MainWindow = React.createClass({
         }
     },
     componentDidMount: function() {
-
+        var self = this;
+        websocket = new WebSocket(socketURL);
+        websocket.onopen = function(event) {
+            self.sendToChatWindow(new Message("CONNECTED","STATUS","STATUS"));
+            sendToServer("AUTHENTICATE");
+        };
+        websocket.onclose = function(event) {
+            self.sendToChatWindow(new Message("DISCONNECTED","STATUS","STATUS"));
+        };
+        websocket.onmessage = function(event) {
+            console.log(event.data);
+            self.sendToChatWindow(JSON.parse(event.data));
+        };
+        websocket.onerror = function(event) {
+            self.sendToChatWindow(event.data);
+        };
+    },
+    sendToChatWindow: function(message){
+        this.refs.chatWindow.recieve(message);
     },
     render: function() {
         return <div>
-                    <ChatWindow/>
+                    <LoginPane/>
+                    <ChatWindow ref="chatWindow"/>
                 </div>;
+    }
+});
+var LoginPane = React.createClass({
+    getInitialState: function() {
+        return {
+            options: []
+        }
+    },
+    componentDidMount: function() {
+        var self = this;
+    },
+    login : function(){
+        var username = this.refs.userName.getDOMNode().value;
+        this.refs.userName.getDOMNode().value = "";
+        sendToServer(new Message(username,username,"REGISTER"))
+    },
+    render: function() {
+        return <div className="row">
+            <div className="large-12 columns">
+                <input ref="userName" type="text" placeholder="Username"/>
+            </div>
+            <button href="#" className="button" onClick={this.login}>Login</button>
+
+        </div>;
     }
 });
 var ChatWindow = React.createClass({
@@ -35,22 +82,10 @@ var ChatWindow = React.createClass({
     },
     componentDidMount: function() {
         var self = this;
-        websocket = new WebSocket(socketURL);
-        websocket.onopen = function(event) {
-            self.sendToOutput(new Message("CONNECTED","STATUS","STATUS"));
-            sendToServer("AUTHENTICATE");
-        };
-        websocket.onclose = function(event) {
-            self.sendToOutput(new Message("DISCONNECTED","STATUS","STATUS"));
-        };
-        websocket.onmessage = function(event) {
-            console.log(event.data);
-            self.sendToOutput(JSON.parse(event.data));
-        };
-        websocket.onerror = function(event) {
-            self.sendToOutput(event.data);
-        };
 
+    },
+    recieve: function(message){
+        this.sendToOutput(message);
     },
     sendToOutput : function(message){
         this.refs.chatOutput.writeMessage(message);
@@ -58,7 +93,7 @@ var ChatWindow = React.createClass({
     },
     render: function() {
         return <div>
-            <ChatOutput ref="chatOutput" outputCallTo={this.outputCallTo}/>
+            <ChatOutput ref="chatOutput"/>
             <ChatInput/>
         </div>;
     }
