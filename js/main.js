@@ -1,18 +1,18 @@
-var socketURL = "wss://localhost:7000/";
+var socketURL = "ws://localhost:9001/chat"; // set to standard (non SSL) for local testing
 
 
 function sendToServer(message) {
     if(typeof  message === 'string'){
-        websocket.send(JSON.stringify(new Message(message, "TESTER", "UPDATE")));
+        websocket.send(JSON.stringify(new Message(message, "TESTER", 1)));
     }else{
         websocket.send(JSON.stringify(message));
     }
 }
 
-function Message(message,user,command){
+function Message(message,user,code){
     this.message = message;
     this.user = user;
-    this.command = command;
+    this.code = code;
 }
 
 
@@ -26,11 +26,10 @@ var MainWindow = React.createClass({
         var self = this;
         websocket = new WebSocket(socketURL);
         websocket.onopen = function(event) {
-            self.sendToChatWindow(new Message("CONNECTED","STATUS","STATUS"));
-            sendToServer("AUTHENTICATE");
+            self.sendToChatWindow(new Message("CONNECTED","STATUS",4));
         };
         websocket.onclose = function(event) {
-            self.sendToChatWindow(new Message("DISCONNECTED","STATUS","STATUS"));
+            self.sendToChatWindow(new Message("DISCONNECTED","STATUS",4));
         };
         websocket.onmessage = function(event) {
             console.log(event.data);
@@ -62,7 +61,7 @@ var LoginPane = React.createClass({
     login : function(){
         var username = this.refs.userName.getDOMNode().value;
         this.refs.userName.getDOMNode().value = "";
-        sendToServer(new Message(username,username,"REGISTER"))
+        sendToServer(new Message(username,username,3))
     },
     render: function() {
         return <div className="row">
