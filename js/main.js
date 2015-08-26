@@ -2,10 +2,12 @@ var socketURL = "ws://localhost:9001/chat"; // set to standard (non SSL) for loc
 
 
 function sendToServer(message) {
-    if(typeof  message === 'string'){
-        websocket.send(JSON.stringify(new Message(message, "TESTER", 1)));
-    }else{
-        websocket.send(JSON.stringify(message));
+    if(message != "") {
+        if (typeof  message === 'string') {
+            websocket.send(JSON.stringify(new Message(message, "TESTER", 1)));
+        } else {
+            websocket.send(JSON.stringify(message));
+        }
     }
 }
 
@@ -52,7 +54,8 @@ var MainWindow = React.createClass({
 var LoginPane = React.createClass({
     getInitialState: function() {
         return {
-            options: []
+            options: [],
+            hidden: false
         }
     },
     componentDidMount: function() {
@@ -61,37 +64,43 @@ var LoginPane = React.createClass({
     login : function(){
         var username = this.refs.userName.getDOMNode().value;
         this.refs.userName.getDOMNode().value = "";
-        sendToServer(new Message(username,username,3))
+        sendToServer(new Message(username,username,3));
+        this.setState({hidden : true});
     },
     render: function() {
-        return <div className="row">
-            <div className="large-12 columns">
-                <input ref="userName" type="text" placeholder="Username"/>
-            </div>
-            <button href="#" className="button" onClick={this.login}>Login</button>
-
-        </div>;
+        return <div className={ this.state.hidden ? "row hide" : "row" }>
+                    <div className="large-12 columns">
+                        <input ref="userName" type="text" placeholder="Username"/>
+                    </div>
+                    <button href="#" className="button" onClick={this.login}>Login</button>
+               </div>;
     }
 });
 var ChatWindow = React.createClass({
     getInitialState: function() {
         return {
-            options: []
+            options: [],
+            chatHidden : true
         }
     },
     componentDidMount: function() {
         var self = this;
-
     },
     recieve: function(message){
-        this.sendToOutput(message);
+        if(message.code == 1) {
+            this.sendToOutput(message);
+        }
+        if(message.code == 201){
+            this.setState({ chatHidden: false});
+            this.sendToOutput(message)
+        }
     },
     sendToOutput : function(message){
         this.refs.chatOutput.writeMessage(message);
         console.log(message);
     },
     render: function() {
-        return <div>
+        return <div className={ this.state.chatHidden ? "hide" : "" } >
             <ChatOutput ref="chatOutput"/>
             <ChatInput/>
         </div>;
